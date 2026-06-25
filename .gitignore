@@ -28,3 +28,7 @@ build/
 # mypy / ruff
 .mypy_cache/
 .ruff_cache/
+
+# Modelos entrenados
+*.pkl
+*.pickle
