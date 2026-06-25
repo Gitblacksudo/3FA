@@ -32,3 +32,5 @@ build/
 # Modelos entrenados
 *.pkl
 *.pickle
+
+results.csv
