@@ -9,40 +9,38 @@ import os
 
 AUDIT_LOG_PATH = os.environ.get(
     "AUDIT_LOG_PATH",
-    # Ruta por defecto dentro del contenedor Kind
-    "/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/124/fs/var/log/audit.log"
+    r"C:\thesis\lab\audit-logs\audit.log"
 )
 
 TARGET_SA = os.environ.get("TARGET_SA", "victim-sa")
 
 
 def tail_log(path: str):
-    """Sigue el fichero de log en tiempo real."""
-    last_size = 0
+    """Sigue el fichero evitando duplicados al reemplazarse el fichero."""
+    lines_seen = 0
     while True:
         try:
-            current_size = os.path.getsize(path)
-            if current_size < last_size:
-                # El fichero fue reemplazado, empezamos desde el principio
-                last_size = 0
-            if current_size > last_size:
-                with open(path, "r", encoding="utf-8") as f:
-                    f.seek(last_size)
-                    for line in f:
-                        line = line.strip()
-                        if line:
-                            yield line
-                    last_size = f.tell()
+            with open(path, "r", encoding="utf-8") as f:
+                all_lines = f.readlines()
+            new_lines = all_lines[lines_seen:]
+            for line in new_lines:
+                line = line.strip()
+                if line:
+                    yield line
+            lines_seen = len(all_lines)
         except FileNotFoundError:
             pass
         time.sleep(0.5)
 
 
 def parse_event(line: str) -> dict | None:
-    """Parsea una línea JSON del audit log. Devuelve None si no es válida."""
+    """Parsea una línea JSON del audit log."""
     try:
         event = json.loads(line)
         if event.get("kind") != "Event":
+            return None
+        # Solo ResponseComplete para evitar duplicados
+        if event.get("stage") != "ResponseComplete":
             return None
         return event
     except json.JSONDecodeError:
@@ -52,8 +50,7 @@ def parse_event(line: str) -> dict | None:
 def is_target_sa(event: dict, sa_name: str) -> bool:
     """Comprueba si el evento pertenece a la ServiceAccount objetivo."""
     username = event.get("user", {}).get("username", "")
-    return f"serviceaccount:{sa_name}" in username or \
-           username.endswith(f":{sa_name}")
+    return f":{sa_name}" in username
 
 
 def stream_events(sa_name: str = TARGET_SA, log_path: str = AUDIT_LOG_PATH):
@@ -67,11 +64,14 @@ def stream_events(sa_name: str = TARGET_SA, log_path: str = AUDIT_LOG_PATH):
 
 
 if __name__ == "__main__":
-    # Prueba rápida: imprime los eventos de victim-sa en tiempo real
+    seen_ids = set()
     for ev in stream_events():
+        audit_id = ev.get("auditID", "")
+        if audit_id in seen_ids:
+            continue
+        seen_ids.add(audit_id)
         verb = ev.get("verb", "")
         resource = ev.get("objectRef", {}).get("resource", "")
         ns = ev.get("objectRef", {}).get("namespace", "")
-        user = ev.get("user", {}).get("username", "")
         ts = ev.get("requestReceivedTimestamp", "")
-        print(f"[{ts}] {verb:10} {resource:20} ns={ns:15} user={user}")
+        print(f"[{ts}] {verb:10} {resource:20} ns={ns}")
