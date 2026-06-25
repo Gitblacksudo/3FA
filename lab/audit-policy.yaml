@@ -1,0 +1,10 @@
+apiVersion: audit.k8s.io/v1
+kind: Policy
+rules:
+  - level: None
+    users: ["system:kube-scheduler", "system:kube-controller-manager"]
+  - level: None
+    nonResourceURLs: ["/healthz*", "/readyz*", "/livez*"]
+  - level: Metadata
+    users: ["system:serviceaccount:*"]
+  - level: Metadata

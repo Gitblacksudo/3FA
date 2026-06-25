@@ -1,0 +1,30 @@
+# Python
+venv/
+__pycache__/
+*.pyc
+*.pyo
+.env
+
+# Logs y datos
+audit-logs/
+*.log
+
+# PyCharm
+.idea/
+
+# Kind / K8s
+*.kubeconfig
+
+# Build / egg
+*.egg-info/
+*.egg
+dist/
+build/
+.eggs/
+
+# pytest
+.pytest_cache/
+
+# mypy / ruff
+.mypy_cache/
+.ruff_cache/

@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "centinela-detector"
+version = "0.1.0"
+description = "Detector de anomalías comportamentales sobre ServiceAccounts de Kubernetes mediante Isolation Forest"
+authors = [
+    {name = "Jorge Lorenzo Cortés"}
+]
+requires-python = ">=3.10"
+dependencies = [
+    "scikit-learn>=1.5",
+    "pandas>=2.2",
+    "numpy>=1.26",
+    "watchdog>=4.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "black>=24.0",
+    "ruff>=0.4",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+
+[project.scripts]
+centinela = "detector.main:main"
