@@ -1,5 +1,6 @@
-﻿kind: Cluster
+kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
+name: centinela
 nodes:
   - role: control-plane
     kubeadmConfigPatches:
@@ -7,11 +8,27 @@ nodes:
         kind: ClusterConfiguration
         apiServer:
           extraArgs:
-            audit-log-path: /var/log/kubernetes/audit.log
-            audit-policy-file: /etc/kubernetes/audit-policy.yaml
-            audit-log-maxage: "1"
-            audit-log-maxbackup: "1"
-            audit-log-maxsize: "100"
+            - name: audit-log-path
+              value: /var/log/kubernetes/audit.log
+            - name: audit-policy-file
+              value: /etc/kubernetes/audit-policy.yaml
+            - name: audit-log-maxage
+              value: "1"
+            - name: audit-log-maxbackup
+              value: "1"
+            - name: audit-log-maxsize
+              value: "100"
+          extraVolumes:
+            - name: audit-policy
+              hostPath: /etc/kubernetes/audit-policy.yaml
+              mountPath: /etc/kubernetes/audit-policy.yaml
+              readOnly: true
+              pathType: File
+            - name: audit-logs
+              hostPath: /var/log/kubernetes
+              mountPath: /var/log/kubernetes
+              readOnly: false
+              pathType: DirectoryOrCreate
     extraMounts:
       - hostPath: C:\thesis\lab\audit-policy.yaml
         containerPath: /etc/kubernetes/audit-policy.yaml
