@@ -7,7 +7,7 @@ from collections import defaultdict
 from datetime import datetime, timezone
 import numpy as np
 
-WINDOW_SECONDS = 300  # 5 minutos
+WINDOW_SECONDS = 30  # medio minuto
 KNOWN_VERBS = ["get", "list", "watch", "create", "update", "patch", "delete"]
 SENSITIVE_RESOURCES = ["secrets", "serviceaccounts", "roles", "rolebindings",
                        "clusterroles", "clusterrolebindings"]

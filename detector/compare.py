@@ -56,7 +56,7 @@ def write_result(path: str, row: dict) -> None:
 
 def run(sa_name: str = "victim-sa",
         train_mode: bool = False,
-        n_train_windows: int = 50) -> None:
+        n_train_windows: int = 20) -> None:
     """
     Pipeline principal.
 
