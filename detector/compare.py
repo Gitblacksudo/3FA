@@ -143,4 +143,7 @@ def run(sa_name: str = "victim-sa",
 if __name__ == "__main__":
     import sys
     train = "--train" in sys.argv
-    run(train_mode=train)
+    n_windows = 20
+    if "--windows" in sys.argv:
+        n_windows = int(sys.argv[sys.argv.index("--windows") + 1])
+    run(train_mode=train, n_train_windows=n_windows)

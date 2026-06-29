@@ -15,13 +15,25 @@ AUDIT_LOG_PATH = os.environ.get(
 TARGET_SA = os.environ.get("TARGET_SA", "victim-sa")
 
 
-def tail_log(path: str):
-    """Sigue el fichero evitando duplicados al reemplazarse el fichero."""
-    lines_seen = 0
+def tail_log(path: str, from_end: bool = True):
+    """
+    Sigue el fichero evitando duplicados al reemplazarse el fichero.
+
+    from_end=True (por defecto): en la primera pasada salta el contenido
+    histórico y solo emite eventos nuevos a partir del arranque. Es el
+    comportamiento correcto para monitorización en tiempo real (tanto en
+    entrenamiento como en detección): el audit log acumula miles de eventos
+    previos que, de procesarse, contaminarían el baseline y dispararían
+    alertas de hechos ya pasados. from_end=False reprocesa el log entero
+    (útil para análisis offline).
+    """
+    lines_seen = None
     while True:
         try:
             with open(path, "r", encoding="utf-8") as f:
                 all_lines = f.readlines()
+            if lines_seen is None:
+                lines_seen = len(all_lines) if from_end else 0
             new_lines = all_lines[lines_seen:]
             for line in new_lines:
                 line = line.strip()
@@ -53,11 +65,13 @@ def is_target_sa(event: dict, sa_name: str) -> bool:
     return f":{sa_name}" in username
 
 
-def stream_events(sa_name: str = TARGET_SA, log_path: str = AUDIT_LOG_PATH):
+def stream_events(sa_name: str = TARGET_SA, log_path: str = AUDIT_LOG_PATH,
+                  from_end: bool = True):
     """Generador: emite eventos del audit log filtrados por SA."""
     print(f"[ingest] Monitorizando SA: {sa_name}")
     print(f"[ingest] Leyendo log: {log_path}")
-    for line in tail_log(log_path):
+    print(f"[ingest] Modo: {'solo eventos nuevos' if from_end else 'log completo'}")
+    for line in tail_log(log_path, from_end=from_end):
         event = parse_event(line)
         if event and is_target_sa(event, sa_name):
             yield event
