@@ -1,0 +1,54 @@
+# Escenario del lab para el detector centinela.
+# Reproduce la ServiceAccount víctima, sus permisos (sobre-permisados a
+# propósito) y el pod desde el que se genera tráfico legítimo y se lanza el
+# ataque de reconocimiento.
+#
+# Uso:  kubectl apply -f C:\thesis\lab\lab-scenario.yaml
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: victim-sa
+  namespace: default
+---
+# SA sobre-permisada: puede leer pods/secrets/configmaps/serviceaccounts en
+# todo el clúster y enumerar el RBAC. El baseline legítimo solo hace get/list
+# de pods y configmaps; el ataque abusa del resto (secrets + RBAC recon).
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: victim-role
+rules:
+  - apiGroups: [""]
+    resources: ["pods", "secrets", "configmaps", "serviceaccounts"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["rbac.authorization.k8s.io"]
+    resources: ["roles", "rolebindings", "clusterroles", "clusterrolebindings"]
+    verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: victim-binding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: victim-role
+subjects:
+  - kind: ServiceAccount
+    name: victim-sa
+    namespace: default
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: victim-pod
+  namespace: default
+spec:
+  serviceAccountName: victim-sa
+  containers:
+    - name: victim
+      image: bitnami/kubectl:latest
+      # 'sleep infinity' en vez del 'sleep 3600' original: evita que el pod se
+      # reinicie cada hora (genera tokens nuevos y huecos en la captura).
+      command: ["sleep", "infinity"]
