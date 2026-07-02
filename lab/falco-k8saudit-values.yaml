@@ -1,0 +1,56 @@
+# Falco dedicado a auditar el AUDIT LOG de Kubernetes vía plugin k8saudit.
+# Lee el MISMO fichero que el detector IA (/var/log/kubernetes/audit.log),
+# de modo que la comparación detector-IA vs Falco es a igualdad de fuente.
+# Release separado del Falco de syscalls (no interfiere con él).
+#
+# Instalar:  helm install falco-k8saudit falcosecurity/falco -n falco -f falco-k8saudit-values.yaml
+
+# k8saudit consume eventos de audit, no syscalls: no hace falta driver de kernel
+driver:
+  enabled: false
+# Tampoco recolecta metadata de runtime/contenedores
+collectors:
+  enabled: false
+
+# falcoctl descarga el plugin k8saudit y su ruleset estándar
+falcoctl:
+  artifact:
+    install:
+      enabled: true
+    follow:
+      enabled: true
+  config:
+    artifact:
+      allowedTypes:
+        - plugin
+        - rulesfile
+      install:
+        refs: [k8saudit-rules:0, k8saudit:0, json:0]
+      follow:
+        refs: [k8saudit-rules:0]
+
+# Montar el audit log del nodo dentro del pod (solo lectura)
+mounts:
+  volumes:
+    - name: audit-log
+      hostPath:
+        path: /var/log/kubernetes
+        type: DirectoryOrCreate
+  volumeMounts:
+    - name: audit-log
+      mountPath: /var/log/kubernetes
+      readOnly: true
+
+falco:
+  rules_files:
+    - /etc/falco/k8s_audit_rules.yaml
+    - /etc/falco/rules.d
+  plugins:
+    - name: k8saudit
+      library_path: libk8saudit.so
+      open_params: "file:///var/log/kubernetes/audit.log"
+    - name: json
+      library_path: libjson.so
+  load_plugins:
+    - k8saudit
+    - json
