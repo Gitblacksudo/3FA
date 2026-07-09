@@ -74,6 +74,7 @@ class WindowAggregator:
         self.window_seconds = window_seconds
         self.buffer: list[dict] = []
         self.window_start: datetime | None = None
+        self.last_window_n = 0  # nº real de eventos de la última ventana cerrada
 
     def add(self, event: dict) -> np.ndarray | None:
         """
@@ -90,6 +91,7 @@ class WindowAggregator:
         if elapsed >= self.window_seconds:
             # Ventana completada: calcular features y resetear
             features = events_to_features(self.buffer)
+            self.last_window_n = len(self.buffer)  # capturar tamaño antes del reset
             self.buffer = [event]
             self.window_start = ts
             return features
