@@ -30,6 +30,19 @@ ensure_curl(){
   have curl && ok "curl instalado"
 }
 
+# Instala el paquete venv/ensurepip de Python si no esta disponible
+ensure_venv(){
+  python3 -c "import ensurepip" >/dev/null 2>&1 && return 0
+  local pyver; pyver="$(python3 -c 'import sys;print(f"{sys.version_info.major}.{sys.version_info.minor}")' 2>/dev/null)"
+  warn "El modulo venv (ensurepip) no esta disponible; intentando instalar python${pyver}-venv..."
+  if   have apt-get; then sudo apt-get update -y && { sudo apt-get install -y "python${pyver}-venv" || sudo apt-get install -y python3-venv; }
+  elif have dnf;     then sudo dnf install -y python3-venv || true
+  elif have yum;     then sudo yum install -y python3-venv || true
+  elif have zypper;  then sudo zypper install -y python3-venv || true
+  else warn "Instala manualmente el paquete venv de tu Python (p. ej. sudo apt install python${pyver}-venv)"; fi
+  python3 -c "import ensurepip" >/dev/null 2>&1 && ok "modulo venv disponible"
+}
+
 ARCH=amd64
 LOCALBIN="$HOME/.local/bin"
 mkdir -p "$LOCALBIN"
@@ -94,10 +107,15 @@ fi
 # ---------------------------------------------------------------------------
 if have python3; then
   info "Creando el entorno virtual del detector..."
-  python3 -m venv "$ROOT/detector/venv"
-  "$ROOT/detector/venv/bin/pip" install --quiet --upgrade pip
-  "$ROOT/detector/venv/bin/pip" install --quiet "scikit-learn>=1.5" "pandas>=2.2" "numpy>=1.26" "watchdog>=4.0"
-  ok "venv listo en detector/venv con scikit-learn, pandas, numpy y watchdog"
+  ensure_venv || true
+  rm -rf "$ROOT/detector/venv"
+  if python3 -m venv "$ROOT/detector/venv"; then
+    "$ROOT/detector/venv/bin/pip" install --quiet --upgrade pip
+    "$ROOT/detector/venv/bin/pip" install --quiet "scikit-learn>=1.5" "pandas>=2.2" "numpy>=1.26" "watchdog>=4.0"
+    ok "venv listo en detector/venv con scikit-learn, pandas, numpy y watchdog"
+  else
+    warn "No se pudo crear el venv. Instala el paquete venv de tu Python (p. ej. sudo apt install python3-venv) y reejecuta ./setup.sh"
+  fi
 else
   warn "Sin python3 no se puede crear el venv; instalalo y vuelve a ejecutar ./setup.sh"
 fi
