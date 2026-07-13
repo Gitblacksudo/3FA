@@ -60,8 +60,10 @@ ensure_docker(){
   # Anadir el usuario al grupo docker (para usar docker sin sudo)
   if ! id -nG "$USER" 2>/dev/null | grep -qw docker; then
     sudo usermod -aG docker "$USER" 2>/dev/null || true
+    # 'newgrp' activa el grupo sin reiniciar; en Ubuntu minimalista esta en util-linux-extra
+    if ! have newgrp && have apt-get; then sudo apt-get install -y util-linux-extra >/dev/null 2>&1 || true; fi
     DOCKER_GROUP_PENDING=1
-    warn "Se anadio '$USER' al grupo docker: CIERRA Y ABRE SESION (o ejecuta 'newgrp docker') antes de ./run.sh"
+    warn "Se anadio '$USER' al grupo docker: ejecuta 'newgrp docker' (o cierra y abre sesion) antes de ./run.sh"
   fi
   if docker info >/dev/null 2>&1; then ok "docker operativo"; else warn "docker instalado; reinicia la sesion para usarlo sin sudo"; fi
 }
