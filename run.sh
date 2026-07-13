@@ -72,16 +72,11 @@ nodes:
         kind: ClusterConfiguration
         apiServer:
           extraArgs:
-            - name: audit-log-path
-              value: /var/log/kubernetes/audit.log
-            - name: audit-policy-file
-              value: /etc/kubernetes/audit/audit-policy.yaml
-            - name: audit-log-maxage
-              value: "1"
-            - name: audit-log-maxbackup
-              value: "1"
-            - name: audit-log-maxsize
-              value: "100"
+            audit-log-path: /var/log/kubernetes/audit.log
+            audit-policy-file: /etc/kubernetes/audit/audit-policy.yaml
+            audit-log-maxage: "1"
+            audit-log-maxbackup: "1"
+            audit-log-maxsize: "100"
           extraVolumes:
             - name: audit-policy
               hostPath: /etc/kubernetes/audit
