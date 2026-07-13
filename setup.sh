@@ -43,6 +43,29 @@ ensure_venv(){
   python3 -c "import ensurepip" >/dev/null 2>&1 && ok "modulo venv disponible"
 }
 
+# Instala y activa Docker si no esta disponible
+ensure_docker(){
+  if ! have docker; then
+    info "Instalando Docker..."
+    if   have apt-get; then sudo apt-get update -y && sudo apt-get install -y docker.io
+    elif have dnf;     then sudo dnf install -y docker
+    elif have yum;     then sudo yum install -y docker
+    elif have zypper;  then sudo zypper install -y docker
+    elif have pacman;  then sudo pacman -Sy --noconfirm docker
+    elif have curl;    then curl -fsSL https://get.docker.com | sudo sh
+    else warn "No pude instalar Docker; hazlo desde https://docs.docker.com/engine/install/"; return 1; fi
+  fi
+  # Arrancar y habilitar el servicio
+  if have systemctl; then sudo systemctl enable --now docker >/dev/null 2>&1 || sudo systemctl start docker >/dev/null 2>&1 || true; fi
+  # Anadir el usuario al grupo docker (para usar docker sin sudo)
+  if ! id -nG "$USER" 2>/dev/null | grep -qw docker; then
+    sudo usermod -aG docker "$USER" 2>/dev/null || true
+    DOCKER_GROUP_PENDING=1
+    warn "Se anadio '$USER' al grupo docker: CIERRA Y ABRE SESION (o ejecuta 'newgrp docker') antes de ./run.sh"
+  fi
+  if docker info >/dev/null 2>&1; then ok "docker operativo"; else warn "docker instalado; reinicia la sesion para usarlo sin sudo"; fi
+}
+
 ARCH=amd64
 LOCALBIN="$HOME/.local/bin"
 mkdir -p "$LOCALBIN"
@@ -88,8 +111,7 @@ for c in "${MISSING[@]}"; do
     kind)    install_kind ;;
     kubectl) install_kubectl ;;
     helm)    install_helm ;;
-    docker)  warn "Instala Docker Engine: https://docs.docker.com/engine/install/"
-             warn "  y anade tu usuario al grupo docker:  sudo usermod -aG docker \$USER  (requiere reiniciar sesion)";;
+    docker)  ensure_docker || true ;;
     python3) warn "Instala Python 3.12+:  sudo apt update && sudo apt install -y python3 python3-venv python3-pip";;
   esac
 done
@@ -134,4 +156,8 @@ case ":$PATH:" in
   *":$LOCALBIN:"*) : ;;
   *) warn "Anade ~/.local/bin al PATH:  export PATH=\"\$HOME/.local/bin:\$PATH\"";;
 esac
-info "Cuando todo este en verde, lanza:  ./run.sh"
+if [ "${DOCKER_GROUP_PENDING:-0}" = "1" ]; then
+  warn "IMPORTANTE: cierra y abre sesion (o ejecuta 'newgrp docker') para que el grupo docker tenga efecto, luego lanza ./run.sh"
+else
+  info "Cuando todo este en verde, lanza:  ./run.sh"
+fi
