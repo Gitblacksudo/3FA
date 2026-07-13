@@ -55,6 +55,11 @@ mkdir -p "$AUDIT_DIR"
 # ---------------------------------------------------------------------------
 # 1. kind-config con rutas Linux (generado dinamicamente)
 # ---------------------------------------------------------------------------
+# La politica de auditoria se monta desde un DIRECTORIO, no como fichero suelto:
+# Docker sobre Linux convierte un bind-mount de fichero inexistente en un
+# directorio vacio, lo que impide que arranque el API Server.
+POLICY_DIR="$(mktemp -d)"
+cp "$ROOT/lab/audit-policy.yaml" "$POLICY_DIR/audit-policy.yaml"
 KCFG="$(mktemp)"
 cat > "$KCFG" <<EOF
 kind: Cluster
@@ -70,7 +75,7 @@ nodes:
             - name: audit-log-path
               value: /var/log/kubernetes/audit.log
             - name: audit-policy-file
-              value: /etc/kubernetes/audit-policy.yaml
+              value: /etc/kubernetes/audit/audit-policy.yaml
             - name: audit-log-maxage
               value: "1"
             - name: audit-log-maxbackup
@@ -79,18 +84,18 @@ nodes:
               value: "100"
           extraVolumes:
             - name: audit-policy
-              hostPath: /etc/kubernetes/audit-policy.yaml
-              mountPath: /etc/kubernetes/audit-policy.yaml
+              hostPath: /etc/kubernetes/audit
+              mountPath: /etc/kubernetes/audit
               readOnly: true
-              pathType: File
+              pathType: DirectoryOrCreate
             - name: audit-logs
               hostPath: /var/log/kubernetes
               mountPath: /var/log/kubernetes
               readOnly: false
               pathType: DirectoryOrCreate
     extraMounts:
-      - hostPath: $ROOT/lab/audit-policy.yaml
-        containerPath: /etc/kubernetes/audit-policy.yaml
+      - hostPath: $POLICY_DIR
+        containerPath: /etc/kubernetes/audit
         readOnly: true
       - hostPath: $AUDIT_DIR
         containerPath: /var/log/kubernetes
