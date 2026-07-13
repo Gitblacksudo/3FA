@@ -17,6 +17,9 @@ CLUSTER=centinela
 WINDOWS="${WINDOWS:-50}"
 AUDIT_DIR="$ROOT/lab/audit-logs"
 
+# setup.sh instala kind/kubectl/helm en ~/.local/bin; asegurar que este en el PATH
+export PATH="$HOME/.local/bin:$PATH"
+
 export AUDIT_LOG_PATH="$AUDIT_DIR/audit.log"
 export MODEL_PATH="$ROOT/detector/model.pkl"
 export THRESHOLD_PATH="$ROOT/detector/threshold.pkl"
@@ -30,6 +33,22 @@ cleanup(){ info "Limpiando procesos en segundo plano..."; for p in "${BG_PIDS[@]
 trap cleanup EXIT
 
 [ -x "$PY" ] || { echo "ERROR: no existe $PY. Ejecuta ./setup.sh primero."; exit 1; }
+
+# Verificar que las herramientas necesarias esten disponibles antes de empezar
+missing=()
+for c in docker kind kubectl helm; do have "$c" || missing+=("$c"); done
+if [ "${#missing[@]}" -gt 0 ]; then
+  echo "ERROR: no se encuentran estas herramientas: ${missing[*]}"
+  echo "  1) Ejecuta ./setup.sh para instalarlas."
+  echo "  2) Asegurate de que ~/.local/bin este en el PATH:"
+  echo "       export PATH=\"\$HOME/.local/bin:\$PATH\""
+  exit 1
+fi
+if ! docker info >/dev/null 2>&1; then
+  echo "ERROR: Docker no esta operativo. Arrancalo (sudo systemctl start docker) o"
+  echo "       anade tu usuario al grupo docker (sudo usermod -aG docker \$USER; reinicia sesion)."
+  exit 1
+fi
 mkdir -p "$AUDIT_DIR"
 
 # ---------------------------------------------------------------------------
