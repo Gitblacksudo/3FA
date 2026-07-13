@@ -25,11 +25,10 @@ ventanas que se desvían del patrón aprendido. Se evalúa frente a **Falco** (c
 ## Instalación y ejecución (Linux)
 
 ```bash
-git clone https://github.com/Gitblacksudo/3FA
-cd 3FA
-chmod +x setup.sh run.sh
-./setup.sh      # verifica/instala requisitos y crea el entorno del detector
-./run.sh        # levanta el laboratorio y ejecuta el experimento completo (~25 min)
+git clone https://github.com/Gitblacksudo/3FA && cd 3FA
+./setup.sh          # instala TODO: curl, Docker+newgrp, kind, kubectl, helm, venv
+newgrp docker       # activa el grupo docker (ya disponible)
+./run.sh            # levanta el lab y ejecuta el experimento
 ```
 
 Para una **demostración rápida** (~6 min) con un baseline reducido:
