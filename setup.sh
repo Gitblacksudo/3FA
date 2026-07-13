@@ -17,6 +17,19 @@ ok(){   printf '  \033[1;32m✓\033[0m %s\n' "$*"; }
 warn(){ printf '  \033[1;33m!\033[0m %s\n' "$*"; }
 have(){ command -v "$1" >/dev/null 2>&1; }
 
+# Instala curl (necesario para descargar kind/kubectl/helm) si no esta presente
+ensure_curl(){
+  have curl && return 0
+  warn "curl no encontrado; intentando instalarlo con el gestor de paquetes..."
+  if   have apt-get; then sudo apt-get update -y && sudo apt-get install -y curl
+  elif have dnf;     then sudo dnf install -y curl
+  elif have yum;     then sudo yum install -y curl
+  elif have zypper;  then sudo zypper install -y curl
+  elif have pacman;  then sudo pacman -Sy --noconfirm curl
+  else warn "No pude instalar curl automaticamente; instalalo a mano (p. ej. sudo apt install curl)"; return 1; fi
+  have curl && ok "curl instalado"
+}
+
 ARCH=amd64
 LOCALBIN="$HOME/.local/bin"
 mkdir -p "$LOCALBIN"
@@ -51,6 +64,11 @@ install_helm(){
     | HELM_INSTALL_DIR="$LOCALBIN" USE_SUDO=false bash >/dev/null
   ok "helm instalado"
 }
+
+# Si hay que descargar herramientas (kind/kubectl/helm), asegurar curl primero
+for c in "${MISSING[@]}"; do
+  case "$c" in kind|kubectl|helm) ensure_curl || true; break ;; esac
+done
 
 for c in "${MISSING[@]}"; do
   case "$c" in
