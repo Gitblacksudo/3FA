@@ -45,8 +45,9 @@ if [ "${#missing[@]}" -gt 0 ]; then
   exit 1
 fi
 if ! docker info >/dev/null 2>&1; then
-  echo "ERROR: Docker no esta operativo. Arrancalo (sudo systemctl start docker) o"
-  echo "       anade tu usuario al grupo docker (sudo usermod -aG docker \$USER; reinicia sesion)."
+  echo "ERROR: Docker no esta operativo. Prueba, en orden:"
+  echo "  - Arrancar el servicio:           sudo systemctl start docker"
+  echo "  - Activar el grupo en la sesion:  newgrp docker   (o cierra y abre sesion / reinicia)"
   exit 1
 fi
 mkdir -p "$AUDIT_DIR"
