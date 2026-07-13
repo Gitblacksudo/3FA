@@ -76,7 +76,7 @@ nodes:
             audit-policy-file: /etc/kubernetes/audit/audit-policy.yaml
             audit-log-maxage: "1"
             audit-log-maxbackup: "1"
-            audit-log-maxsize: "100"
+            audit-log-maxsize: "500"
           extraVolumes:
             - name: audit-policy
               hostPath: /etc/kubernetes/audit
@@ -112,6 +112,9 @@ fi
 info "Desplegando la identidad victima..."
 kubectl apply -f "$ROOT/lab/lab-scenario.yaml"
 kubectl wait --for=condition=Ready pod/victim-pod --timeout=120s
+
+# El API Server escribe el audit.log como root (permisos 0600); darle lectura al detector
+sudo chmod -R a+rX "$AUDIT_DIR" 2>/dev/null || true
 
 # ---------------------------------------------------------------------------
 # 4. Falco (linea base, ruleset estandar)
