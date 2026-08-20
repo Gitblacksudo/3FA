@@ -1,4 +1,4 @@
-# Centinela — Detección de anomalías sobre ServiceAccounts de Kubernetes
+# Centinela - Detección de anomalías sobre ServiceAccounts de Kubernetes
 
 Detector de anomalías comportamentales **no supervisado** que analiza los *audit logs*
 del API Server de Kubernetes para identificar **movimiento lateral por abuso de
@@ -7,17 +7,18 @@ Forest* sobre el comportamiento legítimo de cada identidad y marca como anomal�
 ventanas que se desvían del patrón aprendido. Se evalúa frente a **Falco** (con su
 *ruleset* estándar) como línea base.
 
-> Trabajo Fin de Máster — Máster en Ciberseguridad, Universidad Complutense de Madrid (UCM).
+> Trabajo Fin de Máster - Máster en Ciberseguridad, Universidad Complutense de Madrid (UCM).
+> Autor: Jorge Lorenzo Cortés
 
 ## Requisitos
 
-| Herramienta | Comprobar con |
-|-------------|---------------|
-| Docker      | `docker --version` |
-| Kind        | `kind version` |
-| kubectl     | `kubectl version --client` |
-| Helm        | `helm version` |
-| Python 3.12+ | `python3 --version` |
+| Herramienta  | Comprobar con              |
+|--------------|----------------------------|
+| Docker       | `docker --version`         |
+| Kind         | `kind version`             |
+| kubectl      | `kubectl version --client` |
+| Helm         | `helm version`             |
+| Python 3.12+ | `python3 --version`        |
 
 `setup.sh` instala automáticamente **kind**, **kubectl** y **helm** si faltan; para
 **Docker** y **Python** indica cómo instalarlos.
@@ -54,10 +55,10 @@ kind delete cluster --name centinela
 └── detector/         # Detector de anomalías (Python)
 ```
 
-- `detector/ingest.py` — lee el audit log y filtra por ServiceAccount.
-- `detector/features.py` — 7 *features* por ventana de 30 s.
-- `detector/model.py` — Isolation Forest + umbral (percentil 5).
-- `detector/compare.py` — *pipeline* de entrenamiento (`--train`) y detección.
+- `detector/ingest.py` - lee el audit log y filtra por ServiceAccount.
+- `detector/features.py` - 7 *features* por ventana de 30 s.
+- `detector/model.py` - Isolation Forest + umbral (percentil 5).
+- `detector/compare.py` - *pipeline* de entrenamiento (`--train`) y detección.
 
 ## Notas
 
